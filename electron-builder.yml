@@ -1,0 +1,16 @@
+appId: com.burzhum.grottoclient
+productName: Grotto Client
+directories:
+  output: dist
+files:
+  - src/**/*
+  - node_modules/**/*
+  - package.json
+win:
+  target: [nsis, portable]
+mac:
+  target: [dmg]
+  category: public.app-category.games
+linux:
+  target: [AppImage, deb]
+  category: Game
