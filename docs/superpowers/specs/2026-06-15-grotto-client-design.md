@@ -45,8 +45,12 @@ binaries.
 - `main/main.js` — Electron lifecycle, `BrowserWindow`, IPC wiring, config load/save,
   app menu.
 - `main/telnet.js` — raw `net.Socket` client. Connect/disconnect, stream bytes both
-  ways, minimal telnet IAC handling (strip IAC sequences so they can't corrupt the
-  display; respond WONT/DONT to options we don't support). Emits data + status.
+  ways, telnet IAC handling: strip IAC sequences from the display stream so they can't
+  corrupt output; respond WONT/DONT to options we don't support. **Special-case the
+  ECHO option (TELOPT 1):** on `IAC WILL ECHO` from the server, respond `IAC DO ECHO`
+  and emit `telnet:echo off` (server will echo — client must hide local input, e.g.
+  password prompts); on `IAC WONT ECHO`, respond `IAC DONT ECHO` and emit
+  `telnet:echo on`. Emits data + status + echo.
 - `main/config.js` — load/save `config.json` in Electron `userData`. Passwords stored
   encrypted via Electron **`safeStorage`** (never plaintext on disk).
 - `main/preload.js` — `contextBridge` exposes a minimal, typed IPC API to the
@@ -64,7 +68,8 @@ binaries.
 
 ### IPC contract
 - main → renderer: `telnet:data` (string chunk), `telnet:status`
-  (`connected` | `disconnected` | `error` + message).
+  (`connected` | `disconnected` | `error` + message), `telnet:echo` (`on` | `off` —
+  drives local input masking; defaults to `on` on every new connection).
 - renderer → main: `telnet:connect` (host, port), `telnet:send` (string),
   `telnet:disconnect`, `config:load`, `config:save` (config object).
 
@@ -76,17 +81,24 @@ binaries.
    each completed line runs through the **trigger engine**, whose actions may
    `telnet:send` commands.
 4. User input → **alias expansion** → split on `;` into multiple commands → each
-   `telnet:send` (with optional local echo to the terminal).
+   `telnet:send`. **Local echo:** telnet MUDs do not echo input, so the client echoes
+   sent commands to the terminal itself. Default local echo **on**; when `telnet:echo
+   off` is active (server is echoing — password prompt), the input box masks
+   characters and the client does **not** echo the line. Reverts to on at
+   `telnet:echo on` / disconnect.
 5. Hotkey press → resolved command → same alias/send pipeline.
 6. **Auto-login:** on connect, if the profile has credentials + autologin, a built-in
-   sequence watches for the name/password prompts and sends them.
+   sequence watches for the name/password prompts and sends them. Best-effort: prompt
+   patterns are tuned for the GrottoMud preset; generic MUDs may need the user to
+   adjust or disable autologin.
 
 ## Feature formats (concrete)
 
 - **Profile:** `{ id, name, host, port, username, password(enc), autologin, isPreset }`.
   GrottoMud preset: `{ name:'GrottoMud', host:'10.37.196.5', port:4000 }`.
 - **Alias:** `{ id, key:'k', command:'kill $1', enabled }`. `$1..$9` = positional args,
-  `$*` = all args; a `command` may contain `;` to chain multiple commands.
+  `$*` = all args; a `command` may contain `;` to chain multiple commands. (Separator
+  is `;` in v1; a configurable separator — for MUDs that send literal `;` — is phase 2.)
 - **Trigger:** `{ id, pattern, isRegex, type:'command'|'highlight', action, enabled }`.
   `command` sends `action`; `highlight` shows the matched line in a status/highlight
   style. (`gag` and inline recolor = phase 2.)
@@ -121,6 +133,8 @@ their `config.json`; each enters their own creds.
 - Invalid trigger regex → flagged in the settings UI and skipped; the per-line loop
   never throws.
 - Telnet IAC sequences stripped/answered minimally so they can't corrupt the display.
+- IAC parsing handles sequences split across TCP chunks (buffer a partial IAC at a
+  chunk boundary; never emit a half-sequence to the display or drop an option reply).
 
 ## Packaging & distribution (all platforms)
 
@@ -144,6 +158,9 @@ their `config.json`; each enters their own creds.
   - `hotkeys` — key event → command resolution.
   - `config` — load/save round-trip, `safeStorage` encode/decode (mocked).
 - **telnet.js** — against an in-process mock TCP server (connect, receive, send, drop).
+  Cover IAC handling explicitly: strip arbitrary IAC option sequences from the data
+  stream; `WILL ECHO` → `DO ECHO` reply + `echo off` event; `WONT ECHO` → `echo on`;
+  IAC sequence split across two chunks reassembles correctly.
 - **UI / live** — manual smoke test against GrottoMud `10.37.196.5:4000`.
 
 ## Open decisions deferred to implementation
