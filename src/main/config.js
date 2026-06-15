@@ -16,6 +16,7 @@ export const DEFAULT_CONFIG = {
 const FILE = 'config.json';
 
 // Encrypt each profile password to a base64 string; blank passwords stay blank.
+// If safeStorage is unavailable the password is stored blank (not plaintext) — v1 best-effort; a future version should surface a warning.
 function encProfiles(profiles, safe) {
   const ok = safe && safe.isEncryptionAvailable();
   return profiles.map((p) => ({

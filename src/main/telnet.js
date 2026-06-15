@@ -17,7 +17,10 @@ export class TelnetConnection extends EventEmitter {
     this.parser = createTelnetParser();
     const sock = net.createConnection({ host, port });
     this.socket = sock;
-    sock.on('connect', () => this.emit('status', { state: 'connected' }));
+    const connectTimer = setTimeout(() => {
+      if (sock.connecting) { this.emit('status', { state: 'error', message: 'connection timed out' }); sock.destroy(); }
+    }, 15000);
+    sock.on('connect', () => { clearTimeout(connectTimer); this.emit('status', { state: 'connected' }); });
     sock.on('data', (buf) => {
       const { text, events, reply } = this.parser.feed(buf);
       if (reply.length) sock.write(reply);
@@ -25,10 +28,11 @@ export class TelnetConnection extends EventEmitter {
       for (const ev of events) if (ev.type === 'echo') this.emit('echo', ev.value);
     });
     sock.on('error', (err) => this.emit('status', { state: 'error', message: err.message }));
-    sock.on('close', () => this.emit('status', { state: 'disconnected' }));
+    sock.on('close', () => { clearTimeout(connectTimer); this.emit('status', { state: 'disconnected' }); });
   }
 
   send(text) {
+    if (text == null) return;
     if (this.socket && !this.socket.destroyed) this.socket.write(text);
   }
 

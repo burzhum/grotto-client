@@ -37,6 +37,9 @@ function sendCommand(cmd) {
   window.grotto.send(cmd + '\r\n');
 }
 
+let trigSendCount = 0; let trigWindowStart = 0;
+function triggerSend(cmd) { const now = Date.now(); if (now - trigWindowStart > 1000) { trigWindowStart = now; trigSendCount = 0; } if (++trigSendCount > 25) { if (trigSendCount === 26) term.writeLine('\x1b[31m[grotto] trigger flood stopped — check your triggers\x1b[0m'); return; } sendCommand(cmd); }
+
 function submitInput(raw) {
   if (raw) { history.push(raw); histIdx = history.length; }
   for (const cmd of expandInput(raw, config.aliases)) sendCommand(cmd);
@@ -47,7 +50,8 @@ window.grotto.onData((text) => {
   term.write(text);
   for (const line of lineBuf.push(text)) {
     for (const a of runTriggers(line, compiledTriggers)) {
-      if (a.type === 'command') for (const c of expandInput(a.action, config.aliases)) sendCommand(c);
+      if (a.type === 'command') for (const c of expandInput(a.action, config.aliases)) triggerSend(c);
+      // v1: re-prints the matched line highlighted (the raw line was already shown). Inline gag/recolor needs the custom renderer (phase 2).
       else if (a.type === 'highlight') term.writeLine('\x1b[43m\x1b[30m' + line + '\x1b[0m');
     }
   }
@@ -112,6 +116,7 @@ window.addEventListener('keydown', (e) => {
 // ---- toolbar ----
 connectBtn.onclick = () => {
   const p = currentProfile();
+  if (!p) return;
   config.lastProfileId = p.id; window.grotto.saveConfig(config);
   window.grotto.connect(p.host, p.port);
 };
