@@ -1,0 +1,10 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0b0e12; color: #cfe; font-family: 'IBM Plex Mono', Consolas, monospace; }
+body { display: flex; flex-direction: column; }
+#toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: #11151c; border-bottom: 1px solid #1d2530; }
+#toolbar button, #toolbar select { background: #1a2230; color: #cfe; border: 1px solid #2a3545; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+#status { margin-left: auto; opacity: 0.8; font-size: 12px; }
+#term { flex: 1; min-height: 0; padding: 4px; }
+#input { border: none; border-top: 1px solid #1d2530; background: #0e1218; color: #cfe; padding: 8px; font: inherit; outline: none; }
+#input.masked { -webkit-text-security: disc; }
+#settings-panel { position: fixed; inset: 40px; background: #11151c; border: 1px solid #2a3545; border-radius: 8px; padding: 16px; overflow: auto; }
