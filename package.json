@@ -1,0 +1,24 @@
+{
+  "name": "grotto-client",
+  "version": "0.1.0",
+  "description": "A lightweight cross-platform MUD client (gMUD-style).",
+  "type": "module",
+  "main": "src/main/main.js",
+  "scripts": {
+    "build": "esbuild src/renderer/app.js --bundle --format=esm --outfile=src/renderer/app.bundle.js",
+    "start": "npm run build && electron .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dist": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0",
+    "esbuild": "^0.23.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.10.0"
+  }
+}
