@@ -5,3 +5,4 @@ out/
 config.json
 .DS_Store
 src/renderer/app.bundle.js
+src/renderer/app.bundle.css
