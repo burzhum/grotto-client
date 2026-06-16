@@ -7,6 +7,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -16,7 +17,9 @@ jobs:
         with: { node-version: 20 }
       - run: npm ci
       - run: npm test
-      - run: npm run dist
+      # Build installers only — do NOT let electron-builder self-publish
+      # (it needs GH_TOKEN and would race with the release step below).
+      - run: npm run build && npx electron-builder --publish never
       - uses: softprops/action-gh-release@v2
         with:
           files: |
