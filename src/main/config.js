@@ -3,7 +3,7 @@ import path from 'node:path';
 
 export const DEFAULT_CONFIG = {
   profiles: [
-    { id: 'grottomud', name: 'GrottoMud', host: '10.37.196.5', port: 4000,
+    { id: 'grottomud', name: 'GrottoMud', host: '103.233.0.154', port: 4000,
       username: '', password: '', autologin: false, isPreset: true },
   ],
   aliases: [],
