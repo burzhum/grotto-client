@@ -2,6 +2,8 @@
   "name": "grotto-client",
   "version": "0.1.0",
   "description": "A lightweight cross-platform MUD client (gMUD-style).",
+  "author": { "name": "burzhum", "email": "burzhum@users.noreply.github.com" },
+  "license": "MIT",
   "type": "module",
   "main": "src/main/main.js",
   "scripts": {
